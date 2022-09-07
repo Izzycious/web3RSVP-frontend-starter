@@ -20,4 +20,21 @@ export default async function handler(req, res) {
             .json({error: "Error creating event", success: false});
         } 
     }
+    async function makeFileObjects(body) {
+        const buffer = Buffer.from(JSON.stringify(body));
+        const imageDirectory = resoolve(process.cwd(), `public/images/${body.image}`);
+        const files = await getFilesFromPath(imageDirectory);
+
+        files.push(new File([Buffer], "data.json"));
+        return files;
+    }
+    function makeStorageClient() {
+        return new Web3Storage({token: process.env.WEB3STORAGE_TOKEN});
+    }
+    async function storeFiles(files) {
+
+        const client = makeStorageClient();
+        const cid = await client.put(files);
+        return cid;
+    }
 }
