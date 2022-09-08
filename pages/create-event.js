@@ -14,7 +14,29 @@ export default function CreateEvent() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    console.log("Form submitted")
+    const body = {
+      name: eventName,
+      description: eventDescription,
+      link: eventLink,
+      image: getRandomImage(),
+    };
+    try {
+      const response = await fetch("/api/store-event-data", {
+        method: POST,
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(body),
+      });
+      if (response.status !== 200) {
+        alert("Oops something went wrong. please refresh and try again.");
+      } else {
+        console.log("Form is successfully submitted!");
+        let responseJSON = await response.json();
+        await CreateEvent(responseJSON.cid);
+      }
+      // check response, if success is false, don't take them to success page
+    } catch (error) {
+      alert(`Opps something went wrong, Please try again. Error ${error}`);
+    };
   }
 
   

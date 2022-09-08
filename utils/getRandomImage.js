@@ -1,3 +1,5 @@
+import getRandomImage from "../utils/getRandomimage";
+import {ethers} from "ethers";
 let nextImages = [
   "/candyland.png",
   "/mojito.png",
