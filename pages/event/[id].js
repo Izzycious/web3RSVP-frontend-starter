@@ -3,13 +3,62 @@ import { gql } from "@apollo/client";
 import client from "../../apollo-client";
 import formatTimestamp from "../../utils/formatTimestamp";
 import Image from "next/image";
-
+import { useState } from "react";
+import { ethers } from "ethers";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useAccount } from "wagmi";
+import connectContract from "../../utils/connectContract";
+import Alert from "../../components/Alert";
 import {
   EmojiHappyIcon,
   TicketIcon,
   UsersIcon,
   LinkIcon
 } from "@heroicons/react/outline";
+
+const { data: account } = useAccount();
+const { success, setSuccess } = useState(null);
+const { message, setMessage } = useState(null);
+const { loading, setLoading } = useState(null);
+const { currentTimestamp, setEventTimestamp } = useState(new Date().getTime());
+
+function checkIfAlreadyRSVPed() {
+  if (account) {
+    for (let i = 0; i < event.rsvps.length; i++ ) {
+      const thisAccount = account.address.toLowerCase();
+      if(event.rsvps[i].attendee.id.toLowerCase() == thisAccount) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+const newRSVP = async() => {
+  try {
+    const rsvpContract = connectContract();
+    if (rsvpContract) {
+      const txn = await rsvpContract.createNewRSVP(event.id, {
+        value: event.deposit,
+        gasLimit: 300000,
+      });
+      setLoading(true);
+      console.log("Minting...", txn.hash);
+      await txn.wait();
+
+      console.log("Minted...", txn.hash);
+      setSuccess(true);
+      setLoading(false);
+      setMessage("Your RSVP has been created successfully..");
+    } else {
+      console.log("Error getting contract");
+    }
+  } catch(error) {
+    setSuccess(false);
+    setMessage("ERROR!");
+    setLoading(false);
+    console.log(error);
+  }
+};
 
 function Event({event}) {
   console.log("EVENT:", event)
@@ -21,6 +70,30 @@ function Event({event}) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <section className="relative py-12">
+      {loading && (
+    <Alert
+      alertType={"loading"}
+      alertBody={"Please wait"}
+      triggerAlert={true}
+      color={"white"}
+    />
+  )}
+  {success && (
+    <Alert
+      alertType={"success"}
+      alertBody={message}
+      triggerAlert={true}
+      color={"palegreen"}
+    />
+  )}
+  {success === false && (
+    <Alert
+      alertType={"failed"}
+      alertBody={message}
+      triggerAlert={true}
+      color={"palevioletred"}
+    />
+  )}
         <h6 className="mb-2">{formatTimestamp(event.eventTimestamp)}</h6>
         <h1 className="text-3xl tracking-tight font-extrabold text-gray-900 sm:text-4xl md:text-5xl mb-6 lg:mb-12">
           {event.name}
